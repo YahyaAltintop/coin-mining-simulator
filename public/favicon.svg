@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="30" fill="#f7931a"/>
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#b96c0a" stroke-width="3"/>
+  <text x="32" y="43" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="#7a4506" text-anchor="middle">₿</text>
+  <g transform="rotate(-38 46 18)">
+    <rect x="43" y="4" width="5" height="26" rx="2" fill="#8b5a2b"/>
+    <path d="M31 8 Q45 -2 60 8 Q52 4 45.5 6 Q39 4 31 8 Z" fill="#9aa7bd"/>
+  </g>
+</svg>
