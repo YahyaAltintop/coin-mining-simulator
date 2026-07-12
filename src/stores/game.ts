@@ -1,6 +1,7 @@
 import { computed, reactive } from 'vue'
 import { COINS, coinById } from '../data/coins'
 import { difficultyById } from '../data/difficulty'
+import { rankOf } from '../data/richlist'
 import { GPU_MODELS, effectiveHashrate, effectiveWatts, gpuById, sellPrice, wearPerDay } from '../data/gpus'
 import { housingById } from '../data/housing'
 import type { Camera, Difficulty, GameState, GpuModel, OwnedBuilding, OwnedGpu, SaveMeta, Vec2 } from '../types'
@@ -111,6 +112,8 @@ function migrate(raw: Record<string, unknown>): GameState {
   delete s.housingId
   delete s.buildingPos
   if (s.difficulty !== 'easy' && s.difficulty !== 'normal' && s.difficulty !== 'hard') s.difficulty = 'normal'
+  if (!s.wallet) s.wallet = {}
+  if (typeof s.autoSell !== 'boolean') s.autoSell = true
   const firstUid = s.buildings[0].uid
   const known = new Set(s.buildings.map(b => b.uid))
   for (const g of s.gpus) {
@@ -136,7 +139,7 @@ export function loadGame(id: string): boolean {
     game.screen = 'game'
     game.running = false
     game.editPaused = false
-    game.bankrupt = s.balance < 0 && s.gpus.length === 0
+    game.bankrupt = s.balance < 0 && s.gpus.length === 0 && walletValueOf(s) < 1
     startClock()
     return true
   } catch {
@@ -163,6 +166,7 @@ function freshState(name: string, difficulty: Difficulty): GameState {
     day: 0,
     balance: STARTING_BALANCE,
     coinId: 'btc',
+    mode: 'offline',
     difficulty,
     // the first shack is on the house — welcome to the business
     buildings: [{ uid: uid(), tierId: 'shack', pos: { x: 50, y: 50 }, boughtDay: 0, boughtPrice: 0 }],
@@ -171,6 +175,8 @@ function freshState(name: string, difficulty: Difficulty): GameState {
     coinPrices,
     coinHistory,
     minedTotal,
+    wallet: {},
+    autoSell: true,
     totalEarnedUsd: 0,
     totalElectricityUsd: 0,
     lastReport: { grossUsd: 0, electricityUsd: 0, netUsd: 0, minedCoins: 0 },
@@ -319,16 +325,23 @@ function advanceDay() {
   }
 
   const gross = mined * s.coinPrices[s.coinId]
-  s.balance += gross - elec
+  if (s.autoSell) {
+    s.balance += gross
+  } else {
+    // HODL: mined coins pile up in the wallet; bills are still paid in cash
+    s.wallet[s.coinId] = (s.wallet[s.coinId] ?? 0) + mined
+  }
+  s.balance -= elec
   s.minedTotal[s.coinId] += mined
   s.totalEarnedUsd += gross
   s.totalElectricityUsd += elec
   s.lastReport = { grossUsd: gross, electricityUsd: elec, netUsd: gross - elec, minedCoins: mined }
 
-  if (s.balance < 0 && s.gpus.length === 0) {
+  if (s.balance < 0 && s.gpus.length === 0 && walletValueOf(s) < 1) {
     game.bankrupt = true
     game.running = false
   }
+  checkRankMilestones(s)
   saveGame()
 }
 
@@ -468,6 +481,55 @@ export function selectCoin(coinId: string) {
   }
 }
 
+// ---------- coin exchange ----------
+
+/** Flat trading fee on both buys and sells. */
+export const TRADE_FEE = 0.005
+
+function walletValueOf(s: GameState): number {
+  let v = 0
+  for (const [id, units] of Object.entries(s.wallet)) v += units * (s.coinPrices[id] ?? 0)
+  return v
+}
+
+export const walletValue = computed(() => (game.state ? walletValueOf(game.state) : 0))
+
+/** Spend `usd` cash on a coin at market price. Returns units bought. */
+export function buyCoin(coinId: string, usd: number): number {
+  const s = game.state
+  if (!s) return 0
+  const spend = Math.min(usd, s.balance)
+  if (spend <= 0) return 0
+  const units = (spend * (1 - TRADE_FEE)) / s.coinPrices[coinId]
+  s.balance -= spend
+  s.wallet[coinId] = (s.wallet[coinId] ?? 0) + units
+  saveGame()
+  return units
+}
+
+/** Sell coin units from the wallet at market price. Returns USD received. */
+export function sellCoin(coinId: string, units: number): number {
+  const s = game.state
+  if (!s) return 0
+  const have = s.wallet[coinId] ?? 0
+  const amount = Math.min(units, have)
+  if (amount <= 0) return 0
+  const usd = amount * s.coinPrices[coinId] * (1 - TRADE_FEE)
+  s.wallet[coinId] = have - amount
+  s.balance += usd
+  if (game.bankrupt && s.balance >= 0) game.bankrupt = false
+  saveGame()
+  return usd
+}
+
+export function setAutoSell(v: boolean) {
+  const s = game.state
+  if (s) {
+    s.autoSell = v
+    saveGame()
+  }
+}
+
 // ---------- derived economics (live projections at current prices) ----------
 
 export const rigStats = computed(() => {
@@ -508,6 +570,35 @@ export function gpuEconomics(g: OwnedGpu) {
     remainingDays: alive ? Math.ceil(g.condition / wear) : 0,
     sellValue: sellPrice(s.gpuPrices[g.modelId], g.condition),
   }
+}
+
+// ---------- rich list ----------
+
+/** Player wealth: cash + wallet + resale value of every card + facilities. */
+function netWorthOf(s: GameState): number {
+  const gpuValue = s.gpus.reduce((acc, g) => acc + sellPrice(s.gpuPrices[g.modelId], g.condition), 0)
+  const buildingValue = s.buildings.reduce((acc, b) => acc + housingById(b.tierId).price, 0)
+  return s.balance + walletValueOf(s) + gpuValue + buildingValue
+}
+
+export const netWorth = computed(() => (game.state ? netWorthOf(game.state) : 0))
+
+/** 1-based rank on the world rich list; 51 = below the top 50. */
+export const playerRank = computed(() => rankOf(netWorth.value))
+
+const MILESTONE_KEYS = ['enteredTop50', 'enteredTop10', 'becameRichest'] as const
+export type RankMilestone = (typeof MILESTONE_KEYS)[number]
+/** Set by the store when a milestone is crossed; the UI shows & clears it. */
+export const rankEvents = reactive<{ pending: RankMilestone[] }>({ pending: [] })
+
+function checkRankMilestones(s: GameState) {
+  const rank = rankOf(netWorthOf(s))
+  const best = s.bestRank ?? 999
+  if (rank >= best) return
+  if (rank === 1 && best > 1) rankEvents.pending.push('becameRichest')
+  else if (rank <= 10 && best > 10) rankEvents.pending.push('enteredTop10')
+  else if (rank <= 50 && best > 50) rankEvents.pending.push('enteredTop50')
+  s.bestRank = rank
 }
 
 // Persist on tab close / hide.

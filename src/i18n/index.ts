@@ -108,6 +108,33 @@ const dict = {
     'housing.house': 'Ev',
     'housing.villa': 'Villa',
     'housing.warehouse': 'Depo',
+    // Exchange
+    exchange: 'Borsa',
+    exchangeTitle: 'Coin Borsası',
+    walletLbl: 'Cüzdan',
+    cash: 'Nakit',
+    inWallet: 'Cüzdanda',
+    tradeBuy: 'Al',
+    autoSellLbl: 'Kazılanı otomatik sat',
+    hodlHint: 'Kapalıyken kazdığın coinler cüzdanda birikir; elektrik nakitten ödenir. Fiyat yükselince borsadan sat!',
+    tradeFeeNote: 'Her işlemde %0,5 komisyon kesilir. Fiyatlar oyun günü başına değişir.',
+    maxLbl: 'MAKS',
+    allLbl: 'TÜMÜ',
+    // Rich list
+    richList: 'Zenginler',
+    richListTitle: 'Dünyanın En Zenginleri',
+    netWorth: 'Toplam Servet',
+    yourRank: 'Sıralaman',
+    nextTarget: 'Sıradaki hedef',
+    remaining: 'kaldı',
+    youTag: 'SEN',
+    notRanked: 'Henüz ilk 50\'de değilsin — kazmaya devam!',
+    richListNote: 'Servet = bakiye + kartların satış değeri + tesisler. Servetler yaklaşıktır (2026).',
+    enteredTop50: 'Dünyanın en zengin 50 kişisi arasındasın! 🏆',
+    enteredTop10: 'Dünyanın en zengin 10 kişisi arasındasın! 💎',
+    becameRichest: 'Dünyanın en zengin insanı SENSİN! 👑',
+    offlineMode: 'Çevrimdışı Mod',
+    onlineSoon: '🌐 Çevrimiçi mod yakında',
     // Pause reasons
     pausedEditing: 'Sistemde değişiklik yapılıyor — sayaç durdu',
     autoSaved: 'Otomatik kaydedildi',
@@ -221,6 +248,31 @@ const dict = {
     'housing.house': 'House',
     'housing.villa': 'Villa',
     'housing.warehouse': 'Warehouse',
+    exchange: 'Exchange',
+    exchangeTitle: 'Coin Exchange',
+    walletLbl: 'Wallet',
+    cash: 'Cash',
+    inWallet: 'In wallet',
+    tradeBuy: 'Buy',
+    autoSellLbl: 'Auto-sell mined coins',
+    hodlHint: 'When off, mined coins pile up in your wallet; electricity is paid from cash. Sell on the exchange when the price spikes!',
+    tradeFeeNote: 'A 0.5% fee applies to every trade. Prices move once per in-game day.',
+    maxLbl: 'MAX',
+    allLbl: 'ALL',
+    richList: 'Rich List',
+    richListTitle: "World's Richest People",
+    netWorth: 'Net Worth',
+    yourRank: 'Your Rank',
+    nextTarget: 'Next target',
+    remaining: 'to go',
+    youTag: 'YOU',
+    notRanked: 'Not in the top 50 yet — keep mining!',
+    richListNote: 'Wealth = cash + card resale value + facilities. Fortunes are approximate (2026).',
+    enteredTop50: "You're among the 50 richest people on Earth! 🏆",
+    enteredTop10: "You're in the world's top 10! 💎",
+    becameRichest: 'YOU are the richest person on Earth! 👑',
+    offlineMode: 'Offline Mode',
+    onlineSoon: '🌐 Online mode coming soon',
     pausedEditing: 'Editing your rig — the clock is stopped',
     autoSaved: 'Auto-saved',
     close: 'Close',
@@ -282,6 +334,24 @@ export function fmtUsd(v: number, digits = 2): string {
 
 export function fmtNum(v: number, digits = 2): string {
   return v.toLocaleString(localeTag.value, { maximumFractionDigits: digits })
+}
+
+/** Compact wealth display: "1,1 trilyon $" / "$1.1T", "425 milyar $" / "$425B". */
+export function fmtWealth(v: number): string {
+  const abs = Math.abs(v)
+  if (abs >= 1e12) {
+    const n = fmtNum(v / 1e12, 2)
+    return lang.value === 'tr' ? `${n} trilyon $` : `$${n}T`
+  }
+  if (abs >= 1e9) {
+    const n = fmtNum(v / 1e9, abs < 1e10 ? 1 : 0)
+    return lang.value === 'tr' ? `${n} milyar $` : `$${n}B`
+  }
+  if (abs >= 1e6) {
+    const n = fmtNum(v / 1e6, abs < 1e7 ? 1 : 0)
+    return lang.value === 'tr' ? `${n} milyon $` : `$${n}M`
+  }
+  return fmtUsd(v, 0)
 }
 
 /** "~1.420 gün (3,9 yıl)" — remaining-life display with a year hint. */

@@ -71,6 +71,10 @@ function fmtCoin(v: number): string {
       <dl class="stats">
         <div><dt>{{ t('minedToday') }}</dt><dd class="num">{{ fmtCoin(s.lastReport.minedCoins) }} {{ coin.symbol }}</dd></div>
         <div><dt>{{ t('totalMined') }}</dt><dd class="num">{{ fmtCoin(s.minedTotal[s.coinId]) }} {{ coin.symbol }}</dd></div>
+        <div v-if="(s.wallet[s.coinId] ?? 0) > 0">
+          <dt>👛 {{ t('inWallet') }}</dt>
+          <dd class="num">{{ fmtCoin(s.wallet[s.coinId]) }} {{ coin.symbol }}</dd>
+        </div>
         <div><dt>{{ t('totalEarned') }}</dt><dd class="num up-text">{{ fmtUsd(s.totalEarnedUsd) }}</dd></div>
         <div><dt>{{ t('totalElectric') }}</dt><dd class="num down-text">{{ fmtUsd(s.totalElectricityUsd) }}</dd></div>
       </dl>

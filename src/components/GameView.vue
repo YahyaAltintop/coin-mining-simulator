@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { t } from '../i18n'
-import { beginEdit, endEdit, exitToMenu, game, restartGame } from '../stores/game'
+import { beginEdit, endEdit, exitToMenu, game, rankEvents, restartGame, toast } from '../stores/game'
 import BottomBar from './BottomBar.vue'
 import CoinModal from './CoinModal.vue'
 import HousingModal from './HousingModal.vue'
 import MarketModal from './MarketModal.vue'
 import MiningPanel from './MiningPanel.vue'
+import RichListModal from './RichListModal.vue'
 import RigPanel from './RigPanel.vue'
 import StagePanel from './StagePanel.vue'
 import TopBar from './TopBar.vue'
+import TradeModal from './TradeModal.vue'
 
 type ModalName = 'market' | 'housing' | 'coins' | null
 const openModal = ref<ModalName>(null)
@@ -21,10 +23,22 @@ function openMarket(buildingUid?: string) {
   openModal.value = 'market'
 }
 
+// The rich list and exchange don't touch the rig, so they do NOT pause the game.
+const showRichList = ref(false)
+const showTrade = ref(false)
+
 // Any management modal stops the day counter; closing it resumes if it was running.
 watch(openModal, (now, prev) => {
   if (now && !prev) beginEdit()
   else if (!now && prev) endEdit()
+})
+
+// Localized toasts for rich-list milestones crossed by the engine.
+watch(() => rankEvents.pending.length, () => {
+  while (rankEvents.pending.length) {
+    const key = rankEvents.pending.shift()!
+    toast(t(key))
+  }
 })
 </script>
 
@@ -38,11 +52,15 @@ watch(openModal, (now, prev) => {
       @open-market="openMarket()"
       @open-housing="openModal = 'housing'"
       @open-coins="openModal = 'coins'"
+      @open-rich-list="showRichList = true"
+      @open-trade="showTrade = true"
     />
 
     <MarketModal v-if="openModal === 'market'" :target-building="marketTarget" @close="openModal = null" />
     <HousingModal v-if="openModal === 'housing'" @close="openModal = null" />
     <CoinModal v-if="openModal === 'coins'" @close="openModal = null" />
+    <RichListModal v-if="showRichList" @close="showRichList = false" />
+    <TradeModal v-if="showTrade" @close="showTrade = false" />
 
     <!-- bankruptcy -->
     <div v-if="game.bankrupt" class="modal-backdrop">

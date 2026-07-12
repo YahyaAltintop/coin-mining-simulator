@@ -46,7 +46,10 @@ const themeIcon = () => (settings.theme === 'system' ? '🖥️' : settings.them
 
     <div class="cards">
       <section class="panel card">
-        <h2>🎮 {{ t('newGame') }}</h2>
+        <h2>
+          🎮 {{ t('newGame') }}
+          <span class="chip mode-chip">📴 {{ t('offlineMode') }}</span>
+        </h2>
         <label class="dim" for="gname">{{ t('gameName') }}</label>
         <input id="gname" v-model="name" type="text" :placeholder="t('gameNamePh')" maxlength="24" @keyup.enter="start" />
 
@@ -64,6 +67,7 @@ const themeIcon = () => (settings.theme === 'system' ? '🖥️' : settings.them
 
         <div class="credit chip">💵 {{ t('startingCredit') }}: <b class="num">{{ fmtUsd(STARTING_BALANCE, 0) }}</b></div>
         <button class="btn btn-primary start-btn" @click="start">▶ {{ t('start') }}</button>
+        <span class="online-soon mute">{{ t('onlineSoon') }}</span>
       </section>
 
       <section class="panel card">
@@ -143,7 +147,9 @@ h1 {
 @media (max-width: 780px) { .cards { grid-template-columns: 1fr; } }
 
 .card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
-.card h2 { font-size: 16px; }
+.card h2 { font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mode-chip { font-size: 10.5px; padding: 1.5px 9px; }
+.online-soon { font-size: 11.5px; text-align: center; }
 .card label { font-size: 12px; }
 .credit { align-self: flex-start; }
 .diff-row { display: flex; gap: 7px; }

@@ -19,6 +19,8 @@ Tamamen tarayıcıda çalışan, gerçek zamanlı bir kripto madenciliği tycoon
 - ⚡ **Güç limiti stratejisi** — her kartı %10–100 arasında çalıştır. Tam güç en hızlı kazar ama kartı eritir; ~%20 altında elektrik faturası kazancı yer.
 - 🔥 **Aşınma ve ikinci el** — kartlar gerçekçi şekilde yaşlanır (RTX 3090 gibi sıcak kartlar önce ölür). Az kullanılmış kart piyasaya yakın fiyata, ölü kart hurdaya gider. Tek tıkla *"bozukları sat"*.
 - 🎮 **Zorluk modları** — Kolay / Orta / Zor; elektrik maliyetini (×0,7 / ×1 / ×1,4) ve aşınmayı (×0,7 / ×1 / ×1,5) ölçekler.
+- 💱 **Coin borsası & HODL** — otomatik satışı kapat, kazdığın coinler cüzdanda biriksin; faturalar nakitten ödensin. Borsadan istediğin coini piyasa fiyatından al-sat (%0,5 komisyon), dalgalanmadan ticaret kârı çıkar.
+- 🏆 **Dünya zenginler listesi** — canlı servetin (nakit + cüzdan + kartların satış değeri + tesisler) dünyanın en zengin 50 insanıyla sıralanır (2026 verileri, Musk 1,1 trilyon $). İlk 50'ye, ilk 10'a gir ve 1 numarayı devirip dünyanın en zengin insanı ol. (Mevcut oynanış *çevrimdışı* mod — çevrimiçi mod planlanıyor.)
 - ⏱️ **Gerçek zamanlı simülasyon** — 1 oyun günü ≈ 1,5 sn; 1×/2×/4× hız. Herhangi bir yönetim paneli (veya güç slider'ı) gün sayacını durdurur; kaldığın yerden devam edersin.
 - 🫧 **Yaşayan sahne** — oyun çalışırken kartlar minik halde binasının yanına dizilir, fanlar döner; binaya hover yapınca baloncuk içinde büyürler. Duraklatınca yayılır, seçilebilir olur ve arazi üzerinde hızlı düzenleme balonu açılır (slider + sat).
 - 💾 **Çoklu kayıt** — her oyun günü ve sekme kapanışında `localStorage`'a otomatik kayıt. İlk açılışta zorunlu saklama izni ekranı; hiçbir veri tarayıcıdan çıkmaz.

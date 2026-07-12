@@ -90,8 +90,12 @@ export interface GameState {
   day: number
   balance: number
   coinId: string
+  /** Play mode — 'online' is reserved for a future multiplayer mode */
+  mode?: 'offline' | 'online'
   /** Game mode — scales electricity cost and GPU wear */
   difficulty: Difficulty
+  /** Best (lowest) rich-list rank ever reached — used for milestone toasts */
+  bestRank?: number
   /** Owned facilities on the terrain (at least one) */
   buildings: OwnedBuilding[]
   /** Last camera view (pan + zoom) */
@@ -105,6 +109,10 @@ export interface GameState {
   coinHistory: Record<string, number[]>
   /** Lifetime mined units per coin */
   minedTotal: Record<string, number>
+  /** Coin units currently held (unsold) per coin */
+  wallet: Record<string, number>
+  /** true: mined coins convert to cash instantly; false: they pile up in the wallet */
+  autoSell: boolean
   totalEarnedUsd: number
   totalElectricityUsd: number
   lastReport: DayReport

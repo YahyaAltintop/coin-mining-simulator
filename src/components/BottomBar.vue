@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { localeTag, t } from '../i18n'
 import { game } from '../stores/game'
 
-const emit = defineEmits<{ openMarket: []; openHousing: []; openCoins: [] }>()
+const emit = defineEmits<{ openMarket: []; openHousing: []; openCoins: []; openRichList: []; openTrade: [] }>()
 
 const savedAt = computed(() =>
   game.state ? new Date(game.state.updatedAt).toLocaleTimeString(localeTag.value) : '',
@@ -15,6 +15,8 @@ const savedAt = computed(() =>
     <button class="btn" @click="emit('openMarket')">🛒 {{ t('market') }}</button>
     <button class="btn" @click="emit('openHousing')">🏠 {{ t('housing') }}</button>
     <button class="btn" @click="emit('openCoins')">🪙 {{ t('coins') }}</button>
+    <button class="btn" @click="emit('openTrade')">💱 {{ t('exchange') }}</button>
+    <button class="btn" @click="emit('openRichList')">🏆 {{ t('richList') }}</button>
     <div class="spacer"></div>
     <span class="save-note mute num">💾 {{ t('autoSaved') }} · {{ savedAt }}</span>
   </footer>

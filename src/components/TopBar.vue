@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { formatGameDate, fmtUsd, lang, t } from '../i18n'
 import { difficultyById } from '../data/difficulty'
-import { exitToMenu, game, restartGame, rigStats, setRunning, setSpeed } from '../stores/game'
+import { exitToMenu, game, playerRank, restartGame, rigStats, setRunning, setSpeed } from '../stores/game'
 import { setLang, settings } from '../stores/settings'
 import ModalConfirm from './ModalConfirm.vue'
 
@@ -46,6 +46,10 @@ function doRestart() {
 
     <span class="chip" :title="t(`diffDesc.${s.difficulty}` as never)">
       {{ difficultyById(s.difficulty).icon }} {{ t(`diff.${s.difficulty}` as never) }}
+    </span>
+
+    <span v-if="playerRank <= 50" class="chip rank-chip num" :title="t('yourRank')">
+      {{ playerRank === 1 ? '👑' : '🏆' }} #{{ playerRank }}
     </span>
 
     <div class="spacer"></div>
@@ -112,6 +116,8 @@ function doRestart() {
 .status.off { color: var(--warn); }
 .status.off .dot { background: var(--warn); }
 @keyframes blink { 50% { opacity: 0.35; } }
+
+.rank-chip { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, transparent); background: color-mix(in srgb, var(--gold) 10%, transparent); }
 
 .controls { display: flex; align-items: center; gap: 7px; }
 .speed-group { display: flex; gap: 3px; }
