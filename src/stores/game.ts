@@ -3,8 +3,9 @@ import { COINS, coinById } from '../data/coins'
 import { difficultyById } from '../data/difficulty'
 import { rankOf } from '../data/richlist'
 import { GPU_MODELS, effectiveHashrate, effectiveWatts, gpuById, sellPrice, wearPerDay } from '../data/gpus'
-import { housingById } from '../data/housing'
+import { HOUSING_TIERS, housingById } from '../data/housing'
 import type { Camera, Difficulty, GameState, GpuModel, OwnedBuilding, OwnedGpu, SaveMeta, Vec2 } from '../types'
+import { storageGet, storageRemove, storageSet } from './storage'
 
 const SAVES_KEY = 'cms_saves'
 const SAVE_PREFIX = 'cms_save_'
@@ -23,6 +24,8 @@ export const game = reactive({
   /** whether the clock was running before the edit pause */
   wasRunningBeforeEdit: false,
   bankrupt: false,
+  /** set once a save write fails (storage full or blocked); the UI warns the player */
+  storageFailed: false,
   toasts: [] as Toast[],
 })
 
@@ -56,25 +59,44 @@ export function toast(msg: string) {
 
 // ---------- save / load ----------
 
+/** Skip index entries that a corrupted or hand-edited localStorage could hold. */
+function isSaveMeta(m: unknown): m is SaveMeta {
+  const x = m as SaveMeta | null
+  return (
+    !!x &&
+    typeof x.id === 'string' &&
+    typeof x.name === 'string' &&
+    typeof x.coinId === 'string' &&
+    Number.isFinite(x.updatedAt) &&
+    Number.isFinite(x.day) &&
+    Number.isFinite(x.balance) &&
+    Number.isFinite(x.gpuCount)
+  )
+}
+
 export function listSaves(): SaveMeta[] {
   try {
-    const raw = localStorage.getItem(SAVES_KEY)
-    const list: SaveMeta[] = raw ? JSON.parse(raw) : []
-    return list.sort((a, b) => b.updatedAt - a.updatedAt)
+    const raw = storageGet(SAVES_KEY)
+    const list: unknown = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(list)) return []
+    return list.filter(isSaveMeta).sort((a, b) => b.updatedAt - a.updatedAt)
   } catch {
     return []
   }
 }
 
-function writeSaveIndex(list: SaveMeta[]) {
-  localStorage.setItem(SAVES_KEY, JSON.stringify(list))
+function writeSaveIndex(list: SaveMeta[]): boolean {
+  return storageSet(SAVES_KEY, JSON.stringify(list))
 }
 
 export function saveGame() {
   const s = game.state
   if (!s) return
   s.updatedAt = Date.now()
-  localStorage.setItem(SAVE_PREFIX + s.id, JSON.stringify(s))
+  if (!storageSet(SAVE_PREFIX + s.id, JSON.stringify(s))) {
+    game.storageFailed = true
+    return
+  }
   const meta: SaveMeta = {
     id: s.id,
     name: s.name,
@@ -88,15 +110,20 @@ export function saveGame() {
   }
   const list = listSaves().filter(m => m.id !== s.id)
   list.unshift(meta)
-  writeSaveIndex(list)
+  // cleared again once storage recovers, so a later failure warns anew
+  game.storageFailed = !writeSaveIndex(list)
 }
 
 export function deleteSave(id: string) {
-  localStorage.removeItem(SAVE_PREFIX + id)
+  storageRemove(SAVE_PREFIX + id)
   writeSaveIndex(listSaves().filter(m => m.id !== id))
 }
 
-/** Upgrade saves from the single-facility era to the buildings list. */
+/**
+ * Upgrade saves from the single-facility era to the buildings list, and repair
+ * hand-edited or corrupted saves — an unknown coin/GPU/facility id would make
+ * every lookup throw and crash the UI.
+ */
 function migrate(raw: Record<string, unknown>): GameState {
   const s = raw as unknown as GameState & { housingId?: string; buildingPos?: Vec2 }
   if (!Array.isArray(s.buildings) || s.buildings.length === 0) {
@@ -114,6 +141,14 @@ function migrate(raw: Record<string, unknown>): GameState {
   if (s.difficulty !== 'easy' && s.difficulty !== 'normal' && s.difficulty !== 'hard') s.difficulty = 'normal'
   if (!s.wallet) s.wallet = {}
   if (typeof s.autoSell !== 'boolean') s.autoSell = true
+  // price tables get backfilled per model/coin in loadGame
+  if (!s.gpuPrices) s.gpuPrices = {}
+  if (!s.coinPrices) s.coinPrices = {}
+  if (!s.coinHistory) s.coinHistory = {}
+  if (!s.minedTotal) s.minedTotal = {}
+  if (!COINS.some(c => c.id === s.coinId)) s.coinId = COINS[0].id
+  for (const b of s.buildings) if (!HOUSING_IDS.has(b.tierId)) b.tierId = HOUSING_TIERS[0].id
+  s.gpus = Array.isArray(s.gpus) ? s.gpus.filter(g => GPU_MODELS.some(m => m.id === g.modelId)) : []
   const firstUid = s.buildings[0].uid
   const known = new Set(s.buildings.map(b => b.uid))
   for (const g of s.gpus) {
@@ -121,11 +156,11 @@ function migrate(raw: Record<string, unknown>): GameState {
   }
   return s
 }
-const HOUSING_IDS = new Set(['shack', 'house', 'villa', 'warehouse'])
+const HOUSING_IDS = new Set(HOUSING_TIERS.map(h => h.id))
 
 export function loadGame(id: string): boolean {
   try {
-    const raw = localStorage.getItem(SAVE_PREFIX + id)
+    const raw = storageGet(SAVE_PREFIX + id)
     if (!raw) return false
     const s = migrate(JSON.parse(raw))
     // Backfill prices for models/coins added after the save was created.

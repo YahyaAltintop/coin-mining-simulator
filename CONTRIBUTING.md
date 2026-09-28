@@ -16,6 +16,7 @@ npm run dev
 3. **Balance values belong in `src/data/`** — GPU stats, coins, facility tiers and difficulty multipliers are data tables. Don't hard-code tuning numbers inside components or the store.
 4. **Migrate old saves** — if you change the shape of `GameState` (see `src/types.ts`), extend `migrate()` in `src/stores/game.ts` so existing `localStorage` saves keep loading.
 5. **Respect the edit-pause contract** — any new action that mutates the player's rig should route through `beginEdit()` / `endEdit()` so the day counter pauses during changes.
+6. **Mind the Content-Security-Policy** — `firebase.json` only allows the site's own origin (`'self'`) and forbids framing. Anything external (APIs, Firebase SDK, web fonts, analytics, embedding in an iframe) must be allowed there too, or it will be silently blocked in production.
 
 ## Reporting bugs
 

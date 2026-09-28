@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { formatGameDate, fmtUsd, lang, localeTag, t } from '../i18n'
-import { coinById } from '../data/coins'
+import { COINS } from '../data/coins'
 import { DIFFICULTIES, difficultyById } from '../data/difficulty'
 import { deleteSave, listSaves, loadGame, newGame, STARTING_BALANCE } from '../stores/game'
 import { setLang, settings } from '../stores/settings'
@@ -12,10 +12,18 @@ const name = ref('')
 const difficulty = ref<Difficulty>('normal')
 const saves = ref<SaveMeta[]>(listSaves())
 const pendingDelete = ref<SaveMeta | null>(null)
+const loadFailed = ref(false)
 
 function start() {
   newGame(name.value, difficulty.value)
 }
+
+function load(id: string) {
+  loadFailed.value = !loadGame(id)
+}
+
+/** A save may reference a coin removed in an update — the menu must never throw. */
+const coinSymbol = (id: string) => COINS.find(c => c.id === id)?.symbol ?? '?'
 
 function confirmDelete() {
   if (pendingDelete.value) {
@@ -72,6 +80,7 @@ const themeIcon = () => (settings.theme === 'system' ? '🖥️' : settings.them
 
       <section class="panel card">
         <h2>💾 {{ t('savedGames') }}</h2>
+        <p v-if="loadFailed" class="load-err">⚠️ {{ t('loadFailed') }}</p>
         <p v-if="saves.length === 0" class="empty mute">{{ t('noSaves') }}</p>
         <ul v-else class="save-list">
           <li v-for="s in saves" :key="s.id" class="save">
@@ -79,7 +88,7 @@ const themeIcon = () => (settings.theme === 'system' ? '🖥️' : settings.them
               <b>{{ s.name }}</b>
               <span class="dim small">
                 {{ difficultyById(s.difficulty ?? 'normal').icon }} {{ t(`diff.${s.difficulty ?? 'normal'}` as never) }}
-                · 🏘️ {{ s.buildings ?? 1 }} · 🎴 {{ s.gpuCount }} GPU · {{ coinById(s.coinId).symbol }}
+                · 🏘️ {{ s.buildings ?? 1 }} · 🎴 {{ s.gpuCount }} GPU · {{ coinSymbol(s.coinId) }}
               </span>
               <span class="mute small num">
                 📅 {{ formatGameDate(s.day) }} ({{ t('day') }} {{ s.day + 1 }}) —
@@ -88,7 +97,7 @@ const themeIcon = () => (settings.theme === 'system' ? '🖥️' : settings.them
             </div>
             <div class="save-balance num" :class="s.balance >= 0 ? 'up-text' : 'down-text'">{{ fmtUsd(s.balance, 0) }}</div>
             <div class="save-actions">
-              <button class="btn btn-primary btn-sm" @click="loadGame(s.id)">{{ t('load') }}</button>
+              <button class="btn btn-primary btn-sm" @click="load(s.id)">{{ t('load') }}</button>
               <button class="btn btn-danger btn-sm" @click="pendingDelete = s">{{ t('delete') }}</button>
             </div>
           </li>
@@ -158,6 +167,7 @@ h1 {
 .start-btn { padding: 11px; font-size: 15px; margin-top: 4px; }
 
 .empty { padding: 18px 4px; text-align: center; }
+.load-err { color: var(--warn); font-size: 12.5px; font-weight: 600; }
 .save-list { list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; }
 .save {
   display: grid;

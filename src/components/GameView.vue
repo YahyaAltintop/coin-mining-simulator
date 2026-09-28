@@ -40,6 +40,11 @@ watch(() => rankEvents.pending.length, () => {
     toast(t(key))
   }
 })
+
+// A failed save (storage full or blocked) is reported once; the game keeps running.
+watch(() => game.storageFailed, failed => {
+  if (failed) toast(t('storageFailed'))
+}, { immediate: true })
 </script>
 
 <template>

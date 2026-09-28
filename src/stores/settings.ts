@@ -1,6 +1,7 @@
 import { reactive, watchEffect } from 'vue'
 import { lang } from '../i18n'
 import type { Lang, ThemeMode } from '../types'
+import { storageGet, storageSet } from './storage'
 
 const CONSENT_KEY = 'cms_consent'
 const SETTINGS_KEY = 'cms_settings'
@@ -12,11 +13,11 @@ interface Settings {
 }
 
 function loadSettings(): Settings {
-  const consent = localStorage.getItem(CONSENT_KEY) === '1'
+  const consent = storageGet(CONSENT_KEY) === '1'
   const base: Settings = { theme: 'system', lang: null, consent }
   if (!consent) return base
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY)
+    const raw = storageGet(SETTINGS_KEY)
     if (raw) {
       const s = JSON.parse(raw)
       if (s.theme === 'dark' || s.theme === 'light' || s.theme === 'system') base.theme = s.theme
@@ -44,7 +45,7 @@ export function isDark(): boolean {
 watchEffect(() => {
   document.documentElement.dataset.theme = isDark() ? 'dark' : 'light'
   if (settings.consent) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme: settings.theme, lang: lang.value }))
+    storageSet(SETTINGS_KEY, JSON.stringify({ theme: settings.theme, lang: lang.value }))
   }
 })
 
@@ -55,5 +56,5 @@ export function setLang(l: Lang) {
 
 export function grantConsent() {
   settings.consent = true
-  localStorage.setItem(CONSENT_KEY, '1')
+  storageSet(CONSENT_KEY, '1')
 }

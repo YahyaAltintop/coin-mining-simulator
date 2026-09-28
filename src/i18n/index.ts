@@ -33,6 +33,7 @@ const dict = {
     startingCredit: 'Başlangıç kredisi',
     menuHint: '1.000 $ kredi ile başla, kasanı topla, coin kaz, imparatorluğunu büyüt.',
     deleteSaveConfirm: 'Bu kayıt kalıcı olarak silinecek. Emin misin?',
+    loadFailed: 'Bu kayıt açılamadı — dosya bozulmuş olabilir.',
     // Topbar / time
     balance: 'Bakiye',
     paused: 'DURAKLATILDI',
@@ -138,6 +139,7 @@ const dict = {
     // Pause reasons
     pausedEditing: 'Sistemde değişiklik yapılıyor — sayaç durdu',
     autoSaved: 'Otomatik kaydedildi',
+    storageFailed: 'Tarayıcı depolamasına yazılamadı — ilerlemen kaydedilmiyor olabilir.',
     // misc
     close: 'Kapat',
     confirm: 'Onayla',
@@ -179,6 +181,7 @@ const dict = {
     startingCredit: 'Starting credit',
     menuHint: 'Start with $1,000 credit, build your rig, mine coins, grow your empire.',
     deleteSaveConfirm: 'This save will be permanently deleted. Are you sure?',
+    loadFailed: 'This save could not be opened — it may be corrupted.',
     balance: 'Balance',
     paused: 'PAUSED',
     running: 'RUNNING',
@@ -275,6 +278,7 @@ const dict = {
     onlineSoon: '🌐 Online mode coming soon',
     pausedEditing: 'Editing your rig — the clock is stopped',
     autoSaved: 'Auto-saved',
+    storageFailed: "Couldn't write to browser storage — your progress may not be saved.",
     close: 'Close',
     confirm: 'Confirm',
     yes: 'Yes',
